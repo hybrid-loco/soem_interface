@@ -24,6 +24,7 @@
 #include <soem_interface_rsl/EthercatSlaveBase.hpp>
 
 #include <soem_rsl/ethercat.h>
+#include <vector>
 
 namespace soem_interface_rsl {
 
@@ -1034,11 +1035,15 @@ bool EthercatBusBase::sendSdoRead<std::string>(const uint16_t slave, const uint1
                                                const bool completeAccess, std::string& value) {
   assert(static_cast<int>(slave) <= getNumberOfSlaves());
   // Expected length of the string. String needs to be preallocated
-  int size = value.length();
-  // Create buffer with the length of the string
-  char buffer[size];
-  bool success = sdoReadForward(slave, index, subindex, completeAccess, size, &buffer);
-  value = std::string(buffer, size);
+  int size = static_cast<int>(value.size());
+  if (size <= 0) {
+    value.clear();
+    return sdoReadForward(slave, index, subindex, completeAccess, size, nullptr);
+  }
+
+  std::vector<char> buffer(static_cast<size_t>(size));
+  bool success = sdoReadForward(slave, index, subindex, completeAccess, size, buffer.data());
+  value.assign(buffer.data(), static_cast<size_t>(size));
   return success;
 }
 
